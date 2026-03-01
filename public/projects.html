@@ -298,6 +298,7 @@
           <th>Goal Target</th>
           <th>Target Date</th>
           <th>Start Value</th>
+          <th>Current Value</th>
           <th>End Value</th>
         </tr>
       </thead>
@@ -333,6 +334,9 @@
 
         <label for="startValue">Start Value</label>
         <input type="text" id="startValue" placeholder="Enter start value" required>
+
+        <label for="currentValue">Current Value</label>
+        <input type="text" id="currentValue" placeholder="Enter current value">
 
         <label for="endValue">End Value</label>
         <input type="text" id="endValue" placeholder="Enter end value" required>
@@ -370,6 +374,9 @@
 
       <label for="editStartValue">Start Value</label>
       <input type="text" id="editStartValue" required>
+
+      <label for="editCurrentValue">Current Value</label>
+      <input type="text" id="editCurrentValue">
 
       <label for="editEndValue">End Value</label>
       <input type="text" id="editEndValue" required>
@@ -422,6 +429,7 @@
             "<td>" + escapeHtml(p.goal_target) + "</td>" +
             "<td>" + escapeHtml(p.target_date) + "</td>" +
             "<td>" + escapeHtml(p.start_value) + "</td>" +
+            "<td>" + escapeHtml(p.current_value || "") + "</td>" +
             "<td>" + escapeHtml(p.end_value) + "</td>";
           tr.addEventListener("click", () => openEditPanel(p));
           projectsBody.appendChild(tr);
@@ -449,6 +457,7 @@
       document.getElementById("editGoalTarget").value = project.goal_target;
       document.getElementById("editTargetDate").value = project.target_date;
       document.getElementById("editStartValue").value = project.start_value;
+      document.getElementById("editCurrentValue").value = project.current_value || "";
       document.getElementById("editEndValue").value = project.end_value;
 
       sidePanel.classList.add("open");
@@ -480,6 +489,7 @@
             goalTarget: document.getElementById("editGoalTarget").value,
             targetDate: document.getElementById("editTargetDate").value,
             startValue: document.getElementById("editStartValue").value,
+            currentValue: document.getElementById("editCurrentValue").value,
             endValue: document.getElementById("editEndValue").value,
           }),
         });
@@ -541,6 +551,7 @@
             goalTarget: document.getElementById("goalTarget").value,
             targetDate: document.getElementById("targetDate").value,
             startValue: document.getElementById("startValue").value,
+            currentValue: document.getElementById("currentValue").value,
             endValue: document.getElementById("endValue").value,
           }),
         });

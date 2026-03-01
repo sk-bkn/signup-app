@@ -32,9 +32,14 @@ async function initDb() {
       goal_target TEXT NOT NULL,
       target_date TEXT NOT NULL,
       start_value TEXT NOT NULL,
+      current_value TEXT NOT NULL DEFAULT '',
       end_value TEXT NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+  // Add current_value column if it doesn't exist (for existing tables)
+  await pool.query(`
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS current_value TEXT NOT NULL DEFAULT ''
   `);
 }
 
@@ -148,15 +153,15 @@ app.post("/api/change-password", async (req, res) => {
 
 // Create project endpoint
 app.post("/api/projects", async (req, res) => {
-  const { email, projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue } = req.body;
+  const { email, projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue, endValue } = req.body;
 
   if (!email || !projectName || !projectType || !successMetric || !goalTarget || !targetDate || !startValue || !endValue) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
   await pool.query(
-    `INSERT INTO projects (email, project_name, project_type, success_metric, goal_target, target_date, start_value, end_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [email.toLowerCase().trim(), projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue]
+    `INSERT INTO projects (email, project_name, project_type, success_metric, goal_target, target_date, start_value, current_value, end_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [email.toLowerCase().trim(), projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue || "", endValue]
   );
 
   res.json({ success: true });
@@ -179,15 +184,15 @@ app.get("/api/projects", async (req, res) => {
 // Update project endpoint
 app.put("/api/projects/:id", async (req, res) => {
   const { id } = req.params;
-  const { projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue } = req.body;
+  const { projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue, endValue } = req.body;
 
   if (!projectName || !projectType || !successMetric || !goalTarget || !targetDate || !startValue || !endValue) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
   await pool.query(
-    `UPDATE projects SET project_name = $1, project_type = $2, success_metric = $3, goal_target = $4, target_date = $5, start_value = $6, end_value = $7 WHERE id = $8`,
-    [projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue, id]
+    `UPDATE projects SET project_name = $1, project_type = $2, success_metric = $3, goal_target = $4, target_date = $5, start_value = $6, current_value = $7, end_value = $8 WHERE id = $9`,
+    [projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue || "", endValue, id]
   );
 
   res.json({ success: true });
