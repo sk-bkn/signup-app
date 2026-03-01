@@ -28,6 +28,7 @@
       align-items: center;
       justify-content: center;
       transition: background 0.2s;
+      z-index: 50;
     }
     .home-btn:hover { background: #eef2ff; }
     .home-btn svg { fill: #4f46e5; }
@@ -70,8 +71,10 @@
       border-bottom: 1px solid #e5e7eb;
     }
 
+    tbody tr { cursor: pointer; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9fafb; }
+    tbody tr:hover td { background: #eef2ff; }
+    tbody tr.selected td { background: #e0e7ff; }
 
     .empty-message {
       text-align: center;
@@ -100,6 +103,7 @@
     .create-btn:hover { background: #4338ca; }
     .create-btn:active { background: #3730a3; }
 
+    /* Create modal */
     .overlay {
       display: none;
       position: fixed;
@@ -133,7 +137,7 @@
       text-align: center;
     }
 
-    .modal label {
+    .modal label, .side-panel label {
       display: block;
       font-size: 14px;
       font-weight: 500;
@@ -141,7 +145,7 @@
       margin-bottom: 6px;
     }
 
-    .modal input {
+    .modal input, .side-panel input {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #d0d5dd;
@@ -151,7 +155,7 @@
       transition: border-color 0.2s;
       margin-bottom: 16px;
     }
-    .modal input:focus {
+    .modal input:focus, .side-panel input:focus {
       border-color: #4f46e5;
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
@@ -186,6 +190,95 @@
     }
     .submit-btn:hover { background: #4338ca; }
     .submit-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    /* Side panel */
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+      z-index: 90;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+      padding: 32px 24px;
+    }
+    .side-panel.open { right: 0; }
+
+    .side-panel-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 80;
+    }
+    .side-panel-overlay.open { display: block; }
+
+    .side-panel h2 {
+      font-size: 20px;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .close-panel {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #888;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .close-panel:hover { background: #f3f4f6; color: #333; }
+
+    .panel-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .save-btn:hover { background: #4338ca; }
+    .save-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .delete-btn {
+      width: 100%;
+      padding: 12px;
+      background: #fff;
+      color: #dc2626;
+      border: 2px solid #dc2626;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .delete-btn:hover { background: #fef2f2; }
   </style>
 </head>
 <body>
@@ -218,6 +311,7 @@
     <button class="create-btn" id="createBtn">Create new project</button>
   </div>
 
+  <!-- Create modal -->
   <div class="overlay" id="overlay">
     <div class="modal">
       <h2>Create New Project</h2>
@@ -251,6 +345,42 @@
     </div>
   </div>
 
+  <!-- Edit side panel -->
+  <div class="side-panel-overlay" id="panelOverlay"></div>
+  <div class="side-panel" id="sidePanel">
+    <button class="close-panel" id="closePanel">&times;</button>
+    <h2>Edit Project</h2>
+    <form id="editForm">
+      <input type="hidden" id="editId">
+
+      <label for="editProjectName">Project Name</label>
+      <input type="text" id="editProjectName" required>
+
+      <label for="editProjectType">Project Type</label>
+      <input type="text" id="editProjectType" required>
+
+      <label for="editSuccessMetric">Success Metric</label>
+      <input type="text" id="editSuccessMetric" required>
+
+      <label for="editGoalTarget">Goal Target</label>
+      <input type="text" id="editGoalTarget" required>
+
+      <label for="editTargetDate">Target Date</label>
+      <input type="date" id="editTargetDate" required>
+
+      <label for="editStartValue">Start Value</label>
+      <input type="text" id="editStartValue" required>
+
+      <label for="editEndValue">End Value</label>
+      <input type="text" id="editEndValue" required>
+
+      <div class="panel-actions">
+        <button type="submit" class="save-btn" id="saveBtn">Save</button>
+        <button type="button" class="delete-btn" id="deleteBtn">Delete project</button>
+      </div>
+    </form>
+  </div>
+
   <script>
     const email = localStorage.getItem("userEmail");
     if (!email) window.location.href = "/";
@@ -264,7 +394,17 @@
     const emptyMessage = document.getElementById("emptyMessage");
     const projectsTable = document.getElementById("projectsTable");
 
+    const sidePanel = document.getElementById("sidePanel");
+    const panelOverlay = document.getElementById("panelOverlay");
+    const closePanel = document.getElementById("closePanel");
+    const editForm = document.getElementById("editForm");
+    const saveBtn = document.getElementById("saveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+
+    let allProjects = [];
+
     function renderProjects(projects) {
+      allProjects = projects;
       projectsBody.innerHTML = "";
       if (projects.length === 0) {
         emptyMessage.style.display = "block";
@@ -274,6 +414,7 @@
         projectsTable.querySelector("thead").style.display = "";
         projects.forEach(p => {
           const tr = document.createElement("tr");
+          tr.dataset.id = p.id;
           tr.innerHTML =
             "<td>" + escapeHtml(p.project_name) + "</td>" +
             "<td>" + escapeHtml(p.project_type) + "</td>" +
@@ -282,6 +423,7 @@
             "<td>" + escapeHtml(p.target_date) + "</td>" +
             "<td>" + escapeHtml(p.start_value) + "</td>" +
             "<td>" + escapeHtml(p.end_value) + "</td>";
+          tr.addEventListener("click", () => openEditPanel(p));
           projectsBody.appendChild(tr);
         });
       }
@@ -299,6 +441,73 @@
       renderProjects(projects);
     }
 
+    function openEditPanel(project) {
+      document.getElementById("editId").value = project.id;
+      document.getElementById("editProjectName").value = project.project_name;
+      document.getElementById("editProjectType").value = project.project_type;
+      document.getElementById("editSuccessMetric").value = project.success_metric;
+      document.getElementById("editGoalTarget").value = project.goal_target;
+      document.getElementById("editTargetDate").value = project.target_date;
+      document.getElementById("editStartValue").value = project.start_value;
+      document.getElementById("editEndValue").value = project.end_value;
+
+      sidePanel.classList.add("open");
+      panelOverlay.classList.add("open");
+    }
+
+    function closeSidePanel() {
+      sidePanel.classList.remove("open");
+      panelOverlay.classList.remove("open");
+    }
+
+    closePanel.addEventListener("click", closeSidePanel);
+    panelOverlay.addEventListener("click", closeSidePanel);
+
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editId").value;
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+
+      try {
+        const res = await fetch("/api/projects/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectName: document.getElementById("editProjectName").value,
+            projectType: document.getElementById("editProjectType").value,
+            successMetric: document.getElementById("editSuccessMetric").value,
+            goalTarget: document.getElementById("editGoalTarget").value,
+            targetDate: document.getElementById("editTargetDate").value,
+            startValue: document.getElementById("editStartValue").value,
+            endValue: document.getElementById("editEndValue").value,
+          }),
+        });
+
+        if (res.ok) {
+          closeSidePanel();
+          loadProjects();
+        }
+      } catch {}
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save";
+    });
+
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to delete this project?")) return;
+
+      const id = document.getElementById("editId").value;
+      try {
+        const res = await fetch("/api/projects/" + id, { method: "DELETE" });
+        if (res.ok) {
+          closeSidePanel();
+          loadProjects();
+        }
+      } catch {}
+    });
+
+    // Create modal
     createBtn.addEventListener("click", () => {
       overlay.classList.add("open");
     });

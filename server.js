@@ -163,6 +163,28 @@ app.get("/api/projects", (req, res) => {
   res.json(projects);
 });
 
+// Update project endpoint
+app.put("/api/projects/:id", (req, res) => {
+  const { id } = req.params;
+  const { projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue } = req.body;
+
+  if (!projectName || !projectType || !successMetric || !goalTarget || !targetDate || !startValue || !endValue) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  db.prepare(`UPDATE projects SET project_name = ?, project_type = ?, success_metric = ?, goal_target = ?, target_date = ?, start_value = ?, end_value = ? WHERE id = ?`).run(
+    projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue, id
+  );
+
+  res.json({ success: true });
+});
+
+// Delete project endpoint
+app.delete("/api/projects/:id", (req, res) => {
+  db.prepare("DELETE FROM projects WHERE id = ?").run(req.params.id);
+  res.json({ success: true });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
