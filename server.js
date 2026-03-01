@@ -1,46 +1,119 @@
 const express = require("express");
 const crypto = require("crypto");
 const path = require("path");
-const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const usePostgres = !!process.env.DATABASE_URL;
 
-// Initialize PostgreSQL database
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
-});
+// Database abstraction layer
+let db;
 
+if (usePostgres) {
+  const { Pool } = require("pg");
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  db = {
+    async query(sql, params = []) {
+      const result = await pool.query(sql, params);
+      return result.rows;
+    },
+    async get(sql, params = []) {
+      const result = await pool.query(sql, params);
+      return result.rows[0] || null;
+    },
+    async run(sql, params = []) {
+      await pool.query(sql, params);
+    },
+    placeholder: (n) => `$${n}`,
+  };
+} else {
+  const Database = require("better-sqlite3");
+  const sqlite = new Database(path.join(__dirname, "accounts.db"));
+  sqlite.pragma("journal_mode = WAL");
+
+  db = {
+    async query(sql, params = []) {
+      return sqlite.prepare(convertPlaceholders(sql)).all(...params);
+    },
+    async get(sql, params = []) {
+      return sqlite.prepare(convertPlaceholders(sql)).get(...params) || null;
+    },
+    async run(sql, params = []) {
+      sqlite.prepare(convertPlaceholders(sql)).run(...params);
+    },
+    placeholder: (n) => "?",
+  };
+
+  // Convert $1, $2 style placeholders to ? for SQLite
+  function convertPlaceholders(sql) {
+    return sql.replace(/\$\d+/g, "?");
+  }
+}
+
+// Initialize tables
 async function initDb() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS accounts (
-      id SERIAL PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      salt TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS projects (
-      id SERIAL PRIMARY KEY,
-      email TEXT NOT NULL,
-      project_name TEXT NOT NULL,
-      project_type TEXT NOT NULL,
-      success_metric TEXT NOT NULL,
-      goal_target TEXT NOT NULL,
-      target_date TEXT NOT NULL,
-      start_value TEXT NOT NULL,
-      current_value TEXT NOT NULL DEFAULT '',
-      end_value TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  // Add current_value column if it doesn't exist (for existing tables)
-  await pool.query(`
-    ALTER TABLE projects ADD COLUMN IF NOT EXISTS current_value TEXT NOT NULL DEFAULT ''
-  `);
+  if (usePostgres) {
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        project_name TEXT NOT NULL,
+        project_type TEXT NOT NULL,
+        success_metric TEXT NOT NULL,
+        goal_target TEXT NOT NULL,
+        target_date TEXT NOT NULL,
+        start_value TEXT NOT NULL,
+        current_value TEXT NOT NULL DEFAULT '',
+        end_value TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await db.run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS current_value TEXT NOT NULL DEFAULT ''`);
+  } else {
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        project_name TEXT NOT NULL,
+        project_type TEXT NOT NULL,
+        success_metric TEXT NOT NULL,
+        goal_target TEXT NOT NULL,
+        target_date TEXT NOT NULL,
+        start_value TEXT NOT NULL,
+        current_value TEXT NOT NULL DEFAULT '',
+        end_value TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    // Add current_value column if missing (migration for existing DBs)
+    try {
+      await db.run(`ALTER TABLE projects ADD COLUMN current_value TEXT NOT NULL DEFAULT ''`);
+    } catch (e) {
+      // Column already exists — ignore
+    }
+  }
 }
 
 initDb().catch(err => console.error("DB init error:", err));
@@ -79,13 +152,13 @@ app.post("/api/create-account", async (req, res) => {
   const passwordHash = hashPassword(password, salt);
 
   try {
-    await pool.query(
+    await db.run(
       "INSERT INTO accounts (email, password_hash, salt) VALUES ($1, $2, $3)",
       [email.toLowerCase().trim(), passwordHash, salt]
     );
     res.json({ success: true, message: "Account created successfully!" });
   } catch (err) {
-    if (err.code === "23505") {
+    if (err.code === "23505" || err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       return res.status(409).json({ error: "An account with this email already exists." });
     }
     res.status(500).json({ error: "Something went wrong. Please try again." });
@@ -100,8 +173,7 @@ app.post("/api/login", async (req, res) => {
     return res.status(400).json({ error: "Email and password are required." });
   }
 
-  const result = await pool.query("SELECT * FROM accounts WHERE email = $1", [email.toLowerCase().trim()]);
-  const account = result.rows[0];
+  const account = await db.get("SELECT * FROM accounts WHERE email = $1", [email.toLowerCase().trim()]);
 
   if (!account) {
     return res.status(401).json({ error: "Invalid email or password." });
@@ -128,8 +200,7 @@ app.post("/api/change-password", async (req, res) => {
     return res.status(400).json({ error: "New password must be at least 6 characters." });
   }
 
-  const result = await pool.query("SELECT * FROM accounts WHERE email = $1", [email.toLowerCase().trim()]);
-  const account = result.rows[0];
+  const account = await db.get("SELECT * FROM accounts WHERE email = $1", [email.toLowerCase().trim()]);
 
   if (!account) {
     return res.status(401).json({ error: "Account not found." });
@@ -143,7 +214,7 @@ app.post("/api/change-password", async (req, res) => {
   const newSalt = crypto.randomBytes(16).toString("hex");
   const newHash = hashPassword(newPassword, newSalt);
 
-  await pool.query(
+  await db.run(
     "UPDATE accounts SET password_hash = $1, salt = $2 WHERE email = $3",
     [newHash, newSalt, email.toLowerCase().trim()]
   );
@@ -159,7 +230,7 @@ app.post("/api/projects", async (req, res) => {
     return res.status(400).json({ error: "All fields are required." });
   }
 
-  await pool.query(
+  await db.run(
     `INSERT INTO projects (email, project_name, project_type, success_metric, goal_target, target_date, start_value, current_value, end_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [email.toLowerCase().trim(), projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue || "", endValue]
   );
@@ -174,11 +245,11 @@ app.get("/api/projects", async (req, res) => {
     return res.status(400).json({ error: "Email is required." });
   }
 
-  const result = await pool.query(
+  const projects = await db.query(
     "SELECT * FROM projects WHERE email = $1 ORDER BY created_at DESC",
     [email.toLowerCase().trim()]
   );
-  res.json(result.rows);
+  res.json(projects);
 });
 
 // Update project endpoint
@@ -190,7 +261,7 @@ app.put("/api/projects/:id", async (req, res) => {
     return res.status(400).json({ error: "All fields are required." });
   }
 
-  await pool.query(
+  await db.run(
     `UPDATE projects SET project_name = $1, project_type = $2, success_metric = $3, goal_target = $4, target_date = $5, start_value = $6, current_value = $7, end_value = $8 WHERE id = $9`,
     [projectName, projectType, successMetric, goalTarget, targetDate, startValue, currentValue || "", endValue, id]
   );
@@ -200,10 +271,10 @@ app.put("/api/projects/:id", async (req, res) => {
 
 // Delete project endpoint
 app.delete("/api/projects/:id", async (req, res) => {
-  await pool.query("DELETE FROM projects WHERE id = $1", [req.params.id]);
+  await db.run("DELETE FROM projects WHERE id = $1", [req.params.id]);
   res.json({ success: true });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT} (using ${usePostgres ? "PostgreSQL" : "SQLite"})`);
 });

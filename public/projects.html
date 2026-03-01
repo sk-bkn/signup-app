@@ -296,6 +296,112 @@
       transition: background 0.2s;
     }
     .delete-btn:hover { background: #fef2f2; }
+
+    /* View toggle buttons */
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .view-toggle button {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .view-toggle button.active {
+      background: #4f46e5;
+      color: #fff;
+      border: 2px solid #4f46e5;
+    }
+    .view-toggle button:not(.active) {
+      background: #fff;
+      color: #4f46e5;
+      border: 2px solid #4f46e5;
+    }
+    .view-toggle button:not(.active):hover {
+      background: #eef2ff;
+    }
+
+    /* Kanban board */
+    .kanban-board {
+      display: none;
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .kanban-board.active {
+      display: flex;
+    }
+
+    .kanban-column {
+      flex: 0 0 180px;
+      min-height: 300px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .kanban-column.drag-over {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+
+    .kanban-column-header {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .kanban-column[data-status="Not Started"] .kanban-column-header { background: #6b7280; }
+    .kanban-column[data-status="On Track"] .kanban-column-header { background: #16a34a; }
+    .kanban-column[data-status="Off Track"] .kanban-column-header { background: #dc2626; }
+    .kanban-column[data-status="At Risk"] .kanban-column-header { background: #f59e0b; }
+    .kanban-column[data-status="Done"] .kanban-column-header { background: #2563eb; }
+    .kanban-column[data-status="Deprioritized"] .kanban-column-header { background: #9ca3af; }
+
+    .kanban-column-body {
+      flex: 1;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .kanban-tile {
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      cursor: grab;
+      transition: box-shadow 0.2s;
+      user-select: none;
+    }
+    .kanban-tile:active { cursor: grabbing; }
+    .kanban-tile:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+    .kanban-tile-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .kanban-tile-meta {
+      font-size: 11px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -304,6 +410,11 @@
   </button>
 
   <h1>Projects</h1>
+
+  <div class="view-toggle">
+    <button id="listViewBtn" class="active">List View</button>
+    <button id="panelViewBtn">Panel View</button>
+  </div>
 
   <div class="table-container">
     <table id="projectsTable">
@@ -323,6 +434,33 @@
       </tbody>
     </table>
     <div class="empty-message" id="emptyMessage">No projects yet. Create your first one!</div>
+  </div>
+
+  <div class="kanban-board" id="kanbanView">
+    <div class="kanban-column" data-status="Not Started">
+      <div class="kanban-column-header">Not Started</div>
+      <div class="kanban-column-body"></div>
+    </div>
+    <div class="kanban-column" data-status="On Track">
+      <div class="kanban-column-header">On Track</div>
+      <div class="kanban-column-body"></div>
+    </div>
+    <div class="kanban-column" data-status="Off Track">
+      <div class="kanban-column-header">Off Track</div>
+      <div class="kanban-column-body"></div>
+    </div>
+    <div class="kanban-column" data-status="At Risk">
+      <div class="kanban-column-header">At Risk</div>
+      <div class="kanban-column-body"></div>
+    </div>
+    <div class="kanban-column" data-status="Done">
+      <div class="kanban-column-header">Done</div>
+      <div class="kanban-column-body"></div>
+    </div>
+    <div class="kanban-column" data-status="Deprioritized">
+      <div class="kanban-column-header">Deprioritized</div>
+      <div class="kanban-column-body"></div>
+    </div>
   </div>
 
   <div class="btn-container">
@@ -439,7 +577,32 @@
     const saveBtn = document.getElementById("saveBtn");
     const deleteBtn = document.getElementById("deleteBtn");
 
+    const listViewBtn = document.getElementById("listViewBtn");
+    const panelViewBtn = document.getElementById("panelViewBtn");
+    const kanbanView = document.getElementById("kanbanView");
+    const tableContainer = document.querySelector(".table-container");
+
     let allProjects = [];
+    let activeView = "list";
+
+    // View toggle
+    listViewBtn.addEventListener("click", () => {
+      activeView = "list";
+      listViewBtn.classList.add("active");
+      panelViewBtn.classList.remove("active");
+      tableContainer.style.display = "";
+      kanbanView.classList.remove("active");
+      renderProjects(allProjects);
+    });
+
+    panelViewBtn.addEventListener("click", () => {
+      activeView = "panel";
+      panelViewBtn.classList.add("active");
+      listViewBtn.classList.remove("active");
+      tableContainer.style.display = "none";
+      kanbanView.classList.add("active");
+      renderKanban(allProjects);
+    });
 
     function renderProjects(projects) {
       allProjects = projects;
@@ -477,7 +640,11 @@
     async function loadProjects() {
       const res = await fetch("/api/projects?email=" + encodeURIComponent(email));
       const projects = await res.json();
+      allProjects = projects;
       renderProjects(projects);
+      if (activeView === "panel") {
+        renderKanban(projects);
+      }
     }
 
     function openEditPanel(project) {
@@ -502,6 +669,81 @@
 
     closePanel.addEventListener("click", closeSidePanel);
     panelOverlay.addEventListener("click", closeSidePanel);
+
+    // Kanban rendering
+    function renderKanban(projects) {
+      const columns = kanbanView.querySelectorAll(".kanban-column");
+      columns.forEach(col => {
+        const body = col.querySelector(".kanban-column-body");
+        body.innerHTML = "";
+      });
+
+      projects.forEach(p => {
+        const status = p.current_value || "Not Started";
+        const col = kanbanView.querySelector('.kanban-column[data-status="' + status + '"]');
+        if (!col) return;
+        const body = col.querySelector(".kanban-column-body");
+
+        const tile = document.createElement("div");
+        tile.className = "kanban-tile";
+        tile.draggable = true;
+        tile.dataset.id = p.id;
+        tile.innerHTML =
+          '<div class="kanban-tile-name">' + escapeHtml(p.project_name) + '</div>' +
+          '<div class="kanban-tile-meta">' + escapeHtml(p.project_type) + '</div>' +
+          '<div class="kanban-tile-meta">' + escapeHtml(p.goal_target) + '</div>';
+
+        tile.addEventListener("click", () => openEditPanel(p));
+
+        tile.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", p.id);
+          e.dataTransfer.effectAllowed = "move";
+        });
+
+        body.appendChild(tile);
+      });
+    }
+
+    // Drag and drop on columns
+    kanbanView.querySelectorAll(".kanban-column").forEach(col => {
+      col.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        col.classList.add("drag-over");
+      });
+
+      col.addEventListener("dragleave", () => {
+        col.classList.remove("drag-over");
+      });
+
+      col.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        col.classList.remove("drag-over");
+        const projectId = e.dataTransfer.getData("text/plain");
+        const newStatus = col.dataset.status;
+
+        const project = allProjects.find(p => String(p.id) === String(projectId));
+        if (!project || project.current_value === newStatus) return;
+
+        try {
+          await fetch("/api/projects/" + projectId, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectName: project.project_name,
+              projectType: project.project_type,
+              successMetric: project.success_metric,
+              goalTarget: project.goal_target,
+              targetDate: project.target_date,
+              startValue: project.start_value,
+              currentValue: newStatus,
+              endValue: project.end_value,
+            }),
+          });
+          loadProjects();
+        } catch {}
+      });
+    });
 
     editForm.addEventListener("submit", async (e) => {
       e.preventDefault();
