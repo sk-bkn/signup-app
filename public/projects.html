@@ -145,6 +145,23 @@
       margin-bottom: 6px;
     }
 
+    .modal select, .side-panel select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .modal select:focus, .side-panel select:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
     .modal input, .side-panel input {
       width: 100%;
       padding: 10px 12px;
@@ -336,7 +353,14 @@
         <input type="text" id="startValue" placeholder="Enter start value" required>
 
         <label for="currentValue">Current Status</label>
-        <input type="text" id="currentValue" placeholder="Enter current status">
+        <select id="currentValue">
+          <option value="Not Started">Not Started</option>
+          <option value="On Track">On Track</option>
+          <option value="Off Track">Off Track</option>
+          <option value="At Risk">At Risk</option>
+          <option value="Done">Done</option>
+          <option value="Deprioritized">Deprioritized</option>
+        </select>
 
         <label for="endValue">End Value</label>
         <input type="text" id="endValue" placeholder="Enter end value" required>
@@ -376,7 +400,14 @@
       <input type="text" id="editStartValue" required>
 
       <label for="editCurrentValue">Current Status</label>
-      <input type="text" id="editCurrentValue">
+      <select id="editCurrentValue">
+        <option value="Not Started">Not Started</option>
+        <option value="On Track">On Track</option>
+        <option value="Off Track">Off Track</option>
+        <option value="At Risk">At Risk</option>
+        <option value="Done">Done</option>
+        <option value="Deprioritized">Deprioritized</option>
+      </select>
 
       <label for="editEndValue">End Value</label>
       <input type="text" id="editEndValue" required>
