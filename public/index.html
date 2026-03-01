@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f2f5;
+    }
+
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      margin: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+    }
+
+    input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4338ca; }
+    button:active { background: #3730a3; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    #loginBtn {
+      background: #fff;
+      color: #4f46e5;
+      border: 2px solid #4f46e5;
+      margin-bottom: 10px;
+    }
+    #loginBtn:hover { background: #eef2ff; }
+    #loginBtn:active { background: #e0e7ff; }
+
+    .message {
+      text-align: center;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .message.error {
+      display: block;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sign Up</h1>
+    <p class="subtitle">Create your account to get started</p>
+
+    <form id="signupForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="you@example.com" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6">
+
+      <button type="button" id="loginBtn">Log in</button>
+      <button type="submit">Create Account</button>
+    </form>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("signupForm");
+    const messageEl = document.getElementById("message");
+    const loginBtn = document.getElementById("loginBtn");
+    const createBtn = form.querySelector("button[type='submit']");
+
+    // Log in with entered credentials
+    loginBtn.addEventListener("click", async () => {
+      const email = form.email.value;
+      const password = form.password.value;
+
+      if (!email || !password) {
+        messageEl.textContent = "Please enter your email and password.";
+        messageEl.className = "message error";
+        return;
+      }
+
+      messageEl.className = "message";
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Logging in...";
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem("userEmail", email);
+          window.location.href = "/welcome.html";
+          return;
+        } else {
+          messageEl.textContent = data.error;
+          messageEl.className = "message error";
+        }
+      } catch {
+        messageEl.textContent = "Network error. Please try again.";
+        messageEl.className = "message error";
+      }
+
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Log in";
+    });
+
+    // Create account
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      messageEl.className = "message";
+      createBtn.disabled = true;
+      createBtn.textContent = "Creating...";
+
+      try {
+        const res = await fetch("/api/create-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: form.email.value,
+            password: form.password.value,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          messageEl.textContent = data.message;
+          messageEl.className = "message success";
+          form.reset();
+        } else {
+          messageEl.textContent = data.error;
+          messageEl.className = "message error";
+        }
+      } catch {
+        messageEl.textContent = "Network error. Please try again.";
+        messageEl.className = "message error";
+      }
+
+      createBtn.disabled = false;
+      createBtn.textContent = "Create Account";
+    });
+  </script>
+</body>
+</html>

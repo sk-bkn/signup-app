@@ -1,0 +1,4 @@
+node_modules/
+accounts.db
+accounts.db-shm
+accounts.db-wal
