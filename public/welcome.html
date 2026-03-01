@@ -64,6 +64,23 @@
     .home-btn:hover { background: #eef2ff; }
     .home-btn svg { fill: #4f46e5; }
 
+    .projects-btn {
+      position: fixed;
+      top: 20px;
+      left: 72px;
+      padding: 8px 16px;
+      background: #fff;
+      color: #4f46e5;
+      border: 2px solid #4f46e5;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      height: 40px;
+    }
+    .projects-btn:hover { background: #eef2ff; }
+
     .menu-container {
       position: fixed;
       top: 20px;
@@ -135,6 +152,7 @@
   <button class="home-btn" onclick="location.reload()">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
   </button>
+  <button class="projects-btn" onclick="window.location.href='/projects.html'">Projects</button>
   <div class="menu-container">
     <button class="menu-btn" id="menuBtn"><span></span></button>
     <div class="dropdown" id="dropdown">
