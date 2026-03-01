@@ -10,10 +10,8 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: #f0f2f5;
+      padding: 80px 20px 40px;
     }
 
     .home-btn {
@@ -34,8 +32,62 @@
     .home-btn:hover { background: #eef2ff; }
     .home-btn svg { fill: #4f46e5; }
 
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+    }
+
+    .table-container {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #4f46e5;
+      color: #fff;
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #333;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+      font-size: 15px;
+    }
+
+    .btn-container {
+      text-align: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
     .create-btn {
-      padding: 16px 32px;
+      padding: 14px 28px;
       background: #4f46e5;
       color: #fff;
       border: none;
@@ -47,6 +99,93 @@
     }
     .create-btn:hover { background: #4338ca; }
     .create-btn:active { background: #3730a3; }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 480px;
+      margin: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      font-size: 20px;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+    }
+    .modal input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .cancel-btn {
+      background: #fff;
+      color: #333;
+      border: 1px solid #d0d5dd;
+    }
+    .cancel-btn:hover { background: #f3f4f6; }
+
+    .submit-btn {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+    }
+    .submit-btn:hover { background: #4338ca; }
+    .submit-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -54,6 +193,161 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
   </button>
 
-  <button class="create-btn">Create new project</button>
+  <h1>Projects</h1>
+
+  <div class="table-container">
+    <table id="projectsTable">
+      <thead>
+        <tr>
+          <th>Project Name</th>
+          <th>Project Type</th>
+          <th>Success Metric</th>
+          <th>Goal Target</th>
+          <th>Target Date</th>
+          <th>Start Value</th>
+          <th>End Value</th>
+        </tr>
+      </thead>
+      <tbody id="projectsBody">
+      </tbody>
+    </table>
+    <div class="empty-message" id="emptyMessage">No projects yet. Create your first one!</div>
+  </div>
+
+  <div class="btn-container">
+    <button class="create-btn" id="createBtn">Create new project</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>Create New Project</h2>
+      <form id="projectForm">
+        <label for="projectName">Project Name</label>
+        <input type="text" id="projectName" placeholder="Enter project name" required>
+
+        <label for="projectType">Project Type</label>
+        <input type="text" id="projectType" placeholder="Enter project type" required>
+
+        <label for="successMetric">Success Metric</label>
+        <input type="text" id="successMetric" placeholder="Enter success metric" required>
+
+        <label for="goalTarget">Goal Target</label>
+        <input type="text" id="goalTarget" placeholder="Enter goal target" required>
+
+        <label for="targetDate">Target Date</label>
+        <input type="date" id="targetDate" required>
+
+        <label for="startValue">Start Value</label>
+        <input type="text" id="startValue" placeholder="Enter start value" required>
+
+        <label for="endValue">End Value</label>
+        <input type="text" id="endValue" placeholder="Enter end value" required>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+          <button type="submit" class="submit-btn" id="submitBtn">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const email = localStorage.getItem("userEmail");
+    if (!email) window.location.href = "/";
+
+    const createBtn = document.getElementById("createBtn");
+    const overlay = document.getElementById("overlay");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const projectForm = document.getElementById("projectForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const projectsBody = document.getElementById("projectsBody");
+    const emptyMessage = document.getElementById("emptyMessage");
+    const projectsTable = document.getElementById("projectsTable");
+
+    function renderProjects(projects) {
+      projectsBody.innerHTML = "";
+      if (projects.length === 0) {
+        emptyMessage.style.display = "block";
+        projectsTable.querySelector("thead").style.display = "none";
+      } else {
+        emptyMessage.style.display = "none";
+        projectsTable.querySelector("thead").style.display = "";
+        projects.forEach(p => {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" + escapeHtml(p.project_name) + "</td>" +
+            "<td>" + escapeHtml(p.project_type) + "</td>" +
+            "<td>" + escapeHtml(p.success_metric) + "</td>" +
+            "<td>" + escapeHtml(p.goal_target) + "</td>" +
+            "<td>" + escapeHtml(p.target_date) + "</td>" +
+            "<td>" + escapeHtml(p.start_value) + "</td>" +
+            "<td>" + escapeHtml(p.end_value) + "</td>";
+          projectsBody.appendChild(tr);
+        });
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function loadProjects() {
+      const res = await fetch("/api/projects?email=" + encodeURIComponent(email));
+      const projects = await res.json();
+      renderProjects(projects);
+    }
+
+    createBtn.addEventListener("click", () => {
+      overlay.classList.add("open");
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      overlay.classList.remove("open");
+      projectForm.reset();
+    });
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove("open");
+        projectForm.reset();
+      }
+    });
+
+    projectForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Creating...";
+
+      try {
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            projectName: document.getElementById("projectName").value,
+            projectType: document.getElementById("projectType").value,
+            successMetric: document.getElementById("successMetric").value,
+            goalTarget: document.getElementById("goalTarget").value,
+            targetDate: document.getElementById("targetDate").value,
+            startValue: document.getElementById("startValue").value,
+            endValue: document.getElementById("endValue").value,
+          }),
+        });
+
+        if (res.ok) {
+          overlay.classList.remove("open");
+          projectForm.reset();
+          loadProjects();
+        }
+      } catch {}
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create";
+    });
+
+    loadProjects();
+  </script>
 </body>
 </html>

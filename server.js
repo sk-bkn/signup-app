@@ -18,6 +18,20 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    project_name TEXT NOT NULL,
+    project_type TEXT NOT NULL,
+    success_metric TEXT NOT NULL,
+    goal_target TEXT NOT NULL,
+    target_date TEXT NOT NULL,
+    start_value TEXT NOT NULL,
+    end_value TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
 
 app.use(express.json());
 
@@ -121,6 +135,32 @@ app.post("/api/change-password", (req, res) => {
   );
 
   res.json({ success: true, message: "Password changed successfully!" });
+});
+
+// Create project endpoint
+app.post("/api/projects", (req, res) => {
+  const { email, projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue } = req.body;
+
+  if (!email || !projectName || !projectType || !successMetric || !goalTarget || !targetDate || !startValue || !endValue) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  db.prepare(`INSERT INTO projects (email, project_name, project_type, success_metric, goal_target, target_date, start_value, end_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    email.toLowerCase().trim(), projectName, projectType, successMetric, goalTarget, targetDate, startValue, endValue
+  );
+
+  res.json({ success: true });
+});
+
+// Get projects endpoint
+app.get("/api/projects", (req, res) => {
+  const email = req.query.email;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  const projects = db.prepare("SELECT * FROM projects WHERE email = ? ORDER BY created_at DESC").all(email.toLowerCase().trim());
+  res.json(projects);
 });
 
 app.listen(PORT, () => {
