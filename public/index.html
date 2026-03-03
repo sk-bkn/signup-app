@@ -148,9 +148,9 @@
         const data = await res.json();
 
         if (res.ok) {
-          messageEl.textContent = data.message;
-          messageEl.className = "message success";
-          form.reset();
+          localStorage.setItem("userEmail", form.email.value);
+          window.location.href = "/welcome.html";
+          return;
         } else {
           messageEl.textContent = data.error;
           messageEl.className = "message error";
