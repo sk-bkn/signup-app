@@ -81,15 +81,6 @@
     button:active { background: #3730a3; }
     button:disabled { background: #a5b4fc; cursor: not-allowed; }
 
-    #loginBtn {
-      background: #fff;
-      color: #4f46e5;
-      border: 2px solid #4f46e5;
-      margin-bottom: 10px;
-    }
-    #loginBtn:hover { background: #eef2ff; }
-    #loginBtn:active { background: #e0e7ff; }
-
     .message {
       text-align: center;
       margin-top: 16px;
@@ -126,7 +117,6 @@
       <label for="password">Password</label>
       <input type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6">
 
-      <button type="button" id="loginBtn">Log in</button>
       <button type="submit">Create Account</button>
     </form>
 
@@ -136,49 +126,7 @@
   <script>
     const form = document.getElementById("signupForm");
     const messageEl = document.getElementById("message");
-    const loginBtn = document.getElementById("loginBtn");
     const createBtn = form.querySelector("button[type='submit']");
-
-    // Log in with entered credentials
-    loginBtn.addEventListener("click", async () => {
-      const email = form.email.value;
-      const password = form.password.value;
-
-      if (!email || !password) {
-        messageEl.textContent = "Please enter your email and password.";
-        messageEl.className = "message error";
-        return;
-      }
-
-      messageEl.className = "message";
-      loginBtn.disabled = true;
-      loginBtn.textContent = "Logging in...";
-
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem("userEmail", email);
-          window.location.href = "/welcome.html";
-          return;
-        } else {
-          messageEl.textContent = data.error;
-          messageEl.className = "message error";
-        }
-      } catch {
-        messageEl.textContent = "Network error. Please try again.";
-        messageEl.className = "message error";
-      }
-
-      loginBtn.disabled = false;
-      loginBtn.textContent = "Log in";
-    });
 
     // Create account
     form.addEventListener("submit", async (e) => {
