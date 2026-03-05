@@ -13,14 +13,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f0f2f5;
+      background: #111827;
     }
 
     .card {
-      background: #fff;
+      background: #1f2937;
       padding: 40px;
       border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
       width: 100%;
       max-width: 400px;
       margin: 20px;
@@ -28,13 +28,13 @@
 
     h1 {
       font-size: 24px;
-      color: #1a1a1a;
+      color: #f9fafb;
       margin-bottom: 8px;
       text-align: center;
     }
 
     .subtitle {
-      color: #666;
+      color: #9ca3af;
       text-align: center;
       margin-bottom: 32px;
       font-size: 14px;
@@ -44,20 +44,24 @@
       display: block;
       font-size: 14px;
       font-weight: 500;
-      color: #333;
+      color: #d1d5db;
       margin-bottom: 6px;
     }
 
     input {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid #d0d5dd;
+      border: 1px solid #4b5563;
       border-radius: 8px;
       font-size: 16px;
       outline: none;
       transition: border-color 0.2s;
       margin-bottom: 20px;
+      background: #374151;
+      color: #f9fafb;
     }
+
+    input::placeholder { color: #9ca3af; }
 
     input:focus {
       border-color: #4f46e5;
@@ -82,13 +86,13 @@
     button:disabled { background: #a5b4fc; cursor: not-allowed; }
 
     .login-link-btn {
-      background: #fff;
-      color: #4f46e5;
-      border: 2px solid #4f46e5;
+      background: #1f2937;
+      color: #818cf8;
+      border: 2px solid #818cf8;
       margin-top: 10px;
     }
-    .login-link-btn:hover { background: #eef2ff; }
-    .login-link-btn:active { background: #e0e7ff; }
+    .login-link-btn:hover { background: #374151; }
+    .login-link-btn:active { background: #3730a3; }
 
     .message {
       text-align: center;
@@ -101,16 +105,16 @@
 
     .message.success {
       display: block;
-      background: #ecfdf5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #065f46;
     }
 
     .message.error {
       display: block;
-      background: #fef2f2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #991b1b;
     }
   </style>
 </head>
